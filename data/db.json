@@ -1,0 +1,22 @@
+{
+  "admin": {
+    "email": "admin@empresademo.com",
+    "password": "Demo1234!"
+  },
+  "operarios": [
+    {
+      "nombre": "Juan Gómez",
+      "dni": "33221110",
+      "curso": "Manejo Defensivo",
+      "vigencia": "2026-11-30",
+      "estado": "Vigente"
+    },
+    {
+      "nombre": "Lucía Pérez",
+      "dni": "41778002",
+      "curso": "Manejo Defensivo",
+      "vigencia": "2026-03-10",
+      "estado": "Por vencer"
+    }
+  ]
+}
