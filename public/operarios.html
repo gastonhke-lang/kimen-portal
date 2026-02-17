@@ -1,0 +1,17 @@
+<h2>Listado de Operarios</h2>
+<ul id="lista"></ul>
+
+<script>
+fetch("/api/operarios")
+  .then(r => r.json())
+  .then(data => {
+    const ul = document.getElementById("lista");
+    data.forEach(o => {
+      const li = document.createElement("li");
+      li.innerText = `${o.nombre} - ${o.curso} - ${o.estado}`;
+      ul.appendChild(li);
+    });
+  });
+</script>
+
+<a href="/dashboard">Volver</a>
