@@ -1,0 +1,177 @@
+/kimen-portal
+├─ server.js
+const express = require("express");
+const session = require("express-session");
+const bodyParser = require("body-parser");
+const path = require("path");
+const fs = require("fs");
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static("public"));
+
+app.use(
+  session({
+    secret: "kimen-secret-credenciales",
+    resave: false,
+    saveUninitialized: true
+  })
+);
+
+// DB simple
+const DB_PATH = path.join(__dirname, "data", "db.json");
+const db = JSON.parse(fs.readFileSync(DB_PATH, "utf8"));
+
+// Auth
+app.post("/login", (req, res) => {
+  const { email, password } = req.body;
+
+  if (email === db.admin.email && password === db.admin.password) {
+    req.session.user = email;
+    return res.redirect("/dashboard");
+  }
+
+  res.send("Login incorrecto");
+});
+
+// Protección
+function auth(req, res, next) {
+  if (!req.session.user) return res.redirect("/login.html");
+  next();
+}
+
+// Rutas
+app.get("/dashboard", auth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "dashboard.html"));
+});
+
+app.get("/operarios", auth, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "operarios.html"));
+});
+
+// API demo
+app.get("/api/operarios", auth, (req, res) => {
+  res.json(db.operarios);
+});
+
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/login.html");
+  });
+});
+
+// Start
+app.listen(PORT, () => {
+  console.log("Kimen Portal corriendo en puerto", PORT);
+});
+
+├─ package.json
+{
+  "name": "kimen-portal-credenciales",
+  "version": "1.0.0",
+  "description": "Portal de credenciales Kimen",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "express-session": "^1.17.3",
+    "body-parser": "^1.20.2"
+  }
+}
+
+├─ data/
+│  └─ db.json
+{
+  "admin": {
+    "email": "admin@empresademo.com",
+    "password": "Demo1234!"
+  },
+  "operarios": [
+    {
+      "nombre": "Juan Gómez",
+      "dni": "33221110",
+      "curso": "Manejo Defensivo",
+      "vigencia": "2026-11-30",
+      "estado": "Vigente"
+    },
+    {
+      "nombre": "Lucía Pérez",
+      "dni": "41778002",
+      "curso": "Manejo Defensivo",
+      "vigencia": "2026-03-10",
+      "estado": "Por vencer"
+    }
+  ]
+}
+
+└─ public/
+   ├─ login.html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login | Kimen</title>
+</head>
+<body>
+  <h2>Portal de Credenciales Kimen</h2>
+  <form method="POST" action="/login">
+    <input name="email" placeholder="Email" /><br><br>
+    <input name="password" type="password" placeholder="Password" /><br><br>
+    <button>Ingresar</button>
+  </form>
+</body>
+</html>
+
+   ├─ dashboard.html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard | Kimen</title>
+</head>
+<body>
+  <h2>Dashboard Empresa</h2>
+  <ul>
+    <li><a href="/operarios">Ver operarios</a></li>
+    <li><a href="/logout">Salir</a></li>
+  </ul>
+</body>
+</html>
+
+   └─ operarios.html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Operarios | Kimen</title>
+</head>
+<body>
+  <h2>Listado de Operarios</h2>
+  <ul id="lista"></ul>
+
+  <script>
+    fetch("/api/operarios")
+      .then(r => r.json())
+      .then(data => {
+        const ul = document.getElementById("lista");
+        data.forEach(o => {
+          const li = document.createElement("li");
+          li.innerText = `${o.nombre} - ${o.curso} - ${o.estado}`;
+          ul.appendChild(li);
+        });
+      });
+  </script>
+
+  <br>
+  <a href="/dashboard">Volver</a>
+</body>
+</html>
+
